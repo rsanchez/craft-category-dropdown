@@ -76,9 +76,9 @@ class CategoryDropdownFieldType extends CategoriesFieldType
         $criteria->status = null;
         $criteria->localeEnabled = null;
 
-        $cetegory = $criteria->first();
+        $category = $criteria->first();
 
-        $value = $entry ? $entry->id : null;
+        $value = $category ? $category->id : null;
 
         $options = array();
 
