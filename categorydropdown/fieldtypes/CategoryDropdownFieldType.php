@@ -4,6 +4,8 @@ namespace Craft;
 
 class CategoryDropdownFieldType extends CategoriesFieldType
 {
+    protected $sortable = true;
+
     public function getName()
     {
         return Craft::t('Category Dropdown');
@@ -73,9 +75,6 @@ class CategoryDropdownFieldType extends CategoriesFieldType
             $criteria->id = false;
         }
 
-        $criteria->status = null;
-        $criteria->localeEnabled = null;
-
         $category = $criteria->first();
 
         $value = $category ? $category->id : null;
@@ -90,16 +89,13 @@ class CategoryDropdownFieldType extends CategoriesFieldType
 
         $categories = craft()->elements->getCriteria(ElementType::Category);
 
-        $categories->status = null;
-        $categories->localeEnabled = false;
-        $categories->limit = null;
-
         foreach ($source['criteria'] as $k => $v) {
             $categories->$k = $v;
         }
 
-        foreach ($categories as $element) {
-            $options[$element->id] = $element->title;
+        foreach ($categories as $i => $element) {
+            $prefix = $element->level > 1 ? str_repeat('–', $element->level - 1).' ' : '';
+            $options[$element->id] = $prefix.$element->title;
         }
 
         return craft()->templates->render('_includes/forms/select', array(
@@ -107,5 +103,28 @@ class CategoryDropdownFieldType extends CategoriesFieldType
             'value'   => $value,
             'options' => $options,
         ));
+    }
+
+    /**
+     * @inheritDoc IFieldType::onAfterElementSave()
+     *
+     * @return null
+     */
+    public function onAfterElementSave()
+    {
+        $categoryIds = $this->element->getContent()->getAttribute($this->model->handle);
+
+        // Make sure something was actually posted
+        if ($categoryIds) {
+            // Fill in any gaps
+            $categoryIds = craft()->categories->fillGapsInCategoryIds($categoryIds);
+
+            // shift the selection to the front
+            $selectedCategoryId = array_pop($categoryIds);
+
+            array_unshift($categoryIds, $selectedCategoryId);
+
+            craft()->relations->saveRelations($this->model, $this->element, $categoryIds);
+        }
     }
 }
