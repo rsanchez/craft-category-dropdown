@@ -125,6 +125,8 @@ class CategoryDropdownFieldType extends CategoriesFieldType
             array_unshift($categoryIds, $selectedCategoryId);
 
             craft()->relations->saveRelations($this->model, $this->element, $categoryIds);
+        } else {
+            craft()->relations->saveRelations($this->model, $this->element, []);
         }
     }
 }
